@@ -1,0 +1,32 @@
+FROM hitzhangjie/linux101:latest
+MAINTAINER hitzhangjie
+
+USER root
+
+# Add gophernotes
+ADD . /root/go/src/github.com/gopherdata/gophernotes
+ADD . /assets/copr.repo /etc/yum.repos.d/
+
+# Install Jupyter and gophernotes
+RUN set -x \
+    yum install -y ca-certificates \ 
+    && yum install -y python36 python3-zmq python3-pkgconfig zeromq-devel musl-devel \
+    && pip3 install --upgrade pip==9.0.3 \
+    && ln -s /usr/bin/python3.6 /usr/bin/python \
+    ## Jupyter notebook
+    && ln -s /usr/include/locale.h /usr/include/xlocale.h \
+    && pip3 install jupyter notebook pyzmq==16.0.2 tornado==5.0 ipykernel==4.8.1 \
+    ## install gophernotes
+    && cd /root/go/src/github.com/gopherdata/gophernotes \
+    && go install . \
+    && cp /root/go/bin/gophernotes /usr/local/bin/ \
+    && mkdir -p ~/.local/share/jupyter/kernels/gophernotes \
+    && cp -r ./kernel/* ~/.local/share/jupyter/kernels/gophernotes \
+    && cd - \
+    && find /usr/lib/python3.6 -name __pycache__ | xargs rm -r \
+    && rm -rf \
+        /root/.[acpw]* \
+        ipaexg00301* 
+
+EXPOSE 8888
+CMD [ "jupyter", "notebook", "--no-browser", "--allow-root", "--ip=0.0.0.0" ]
